@@ -1,0 +1,22 @@
+Install instructions:
+
+Files install:
+
+- copy the backend files to the corresponding localhost folder (for example: /var/www/todoapp/api)
+- specify this folder in the task.service file (for example: http://localhost/todoapp/api)
+
+Database install:
+
+- create database
+- set up the connection datas in the connect.php file
+- import the required table from the database.sql file to the database
+
+In the apache2 service you have to enable the headers modul:
+
+- a2enmod headers
+- systemctl restart apache2
+
+Required angular modules:
+
+- bootstrap
+- material ui

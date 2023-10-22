@@ -1,0 +1,21 @@
+v1.0:
+
+- initial release
+
+v2.0:
+
+GUI
+- popup window when adding or editing todo item
+- on the left pane there is an "Add new Item" button instead of text field and add button
+
+Code
+- created components folder
+- the navbar component moved to components folder
+- new todo-item-window component, which handles the add/update todo item
+- the add todo item function (addTask) moved to the todo-item-window component
+- created main service for common used services
+- the status messages moved to main service (openSuccessStatusBar, openErrorStatusBar)
+- new 'get' method in the task service
+- new component: ConfirmDialogComponent, it handles the confirmation dialog for eg.: 
+    ask when delete todo item (are you sure to delete this todo item?)
+- confirmation dialog for delete todo item

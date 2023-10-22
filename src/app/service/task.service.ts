@@ -14,6 +14,12 @@ export class TaskService {
 
   constructor(private http: HttpClient) { }
 
+  get(id: any) {
+    const params = new HttpParams().set('id', id.toString());
+
+    return this.http.get(`${this.baseUrl}/get`, { params: params });
+  }
+
   getAll() {
     return this.http.get(`${this.baseUrl}/list`).pipe(
       map((res: any) => {

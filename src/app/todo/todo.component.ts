@@ -3,6 +3,9 @@ import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { Task } from '../model/task';
 import { TaskService } from '../service/task.service';
+import { TodoItemWindowComponent } from '../components/todo-item-window/todo-item-window.component';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogModel, ConfirmDialogComponent } from '../components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-todo',
@@ -24,10 +27,12 @@ export class TodoComponent implements OnInit {
 
   isEditEnabled: boolean = false;
 
+	editData: any;
+
   errorMessage = '';
   successMessage = '';
 
-  constructor(private fb: FormBuilder, private taskService: TaskService) { }
+  constructor(private fb: FormBuilder, private taskService: TaskService, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     this.getTasks();
@@ -44,71 +49,33 @@ export class TodoComponent implements OnInit {
     this.isEditEnabled = true;
   }
 
-  addTask() {
-    let newTask: Task = { id:null, description: this.todoForm.value.item, list:'t', position: 0, done:false};
-
-    this.taskService.store(newTask).subscribe(
-      (res: Task) => {
-        // Update the list of cars
-        this.tasksList.push({
-          id: res.id,
-          description: res.description,
-          list: "t",
-          position: 0,
-          done: false
-        });
-    
-        // Inform the user
-        this.showSuccessMessage('Created successfully');
-      },
-      (err) => (this.showErrorMessage(err.message))
-    );
-
-    this.todoForm.reset();
-  }
-
-  updateTask() {
-    let updatedTask: Task = { id:this.updateItemId, description: this.todoForm.value.item, list:this.updateItemList, position: 0, done:false};
-    if (this.updateItemList=="d") {
-      updatedTask.done = true;
-    }
-    this.taskService.update(updatedTask).subscribe(
-      (res) => {
-        if (this.updateItemList=="t") {
-          this.tasksList[this.updateItemIndex] = updatedTask;
-        }
-        if (this.updateItemList=="p") {
-          this.inprogressList[this.updateItemIndex] = updatedTask;
-        }
-        if (this.updateItemList=="d") {
-          this.doneList[this.updateItemIndex] = updatedTask;
-        }
-        this.showSuccessMessage('Updated successfully');
-        this.updateItemIndex = undefined;
-        this.isEditEnabled = false;
-        },
-      (err) => (this.showErrorMessage(err))
-      );
-      this.todoForm.reset();
-  }
-
   deleteTask(item:Task, i:number, listId:string) {
-    this.taskService.delete(item.id).subscribe(
-      (res) => {
-        if (listId=="t") {
-          this.tasksList.splice(i,1);
-        }
-        if (listId=="p") {
-          this.inprogressList.splice(i,1);
-        }
-        if (listId=="d") {
-          this.doneList.splice(i,1);
-        }
-        this.showSuccessMessage('Deleted successfully');
-      },
-      (err) => (this.showErrorMessage(err))
-    );
-
+	const message = `Are you sure you want to delete this item?`;
+	const dialogData = new ConfirmDialogModel("Confirm Action", message);
+	const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+		maxWidth: "400px",
+		data: dialogData
+	});
+  
+	dialogRef.afterClosed().subscribe(dialogResult => {
+		if (dialogResult) {
+			this.taskService.delete(item.id).subscribe(
+				(res) => {
+					if (listId=="t") {
+					this.tasksList.splice(i,1);
+					}
+					if (listId=="p") {
+					this.inprogressList.splice(i,1);
+					}
+					if (listId=="d") {
+					this.doneList.splice(i,1);
+					}
+					this.showSuccessMessage('Deleted successfully');
+				},
+				(err) => (this.showErrorMessage(err))
+			);
+		}
+	});
   }
 
   drop(event: CdkDragDrop<Task[]>) {
@@ -166,6 +133,9 @@ export class TodoComponent implements OnInit {
   }
 
   getTasks(): void {
+	this.tasksList = [];
+	this.inprogressList = [];
+	this.doneList = [];
     this.taskService.getAll().subscribe(
       (data: Task[]) => {
         data.forEach((taskItem) => {
@@ -194,6 +164,37 @@ export class TodoComponent implements OnInit {
     console.log(msg);
     this.errorMessage = msg;
     setTimeout(() => this.errorMessage='', 5000);
+  }
+
+  addItem() {
+    let newTask: Task = { id: null, description: "", list: 't', position: 0, done: false};
+    this.openPopup(0, 'Add new todo item', TodoItemWindowComponent, newTask);
+  }
+
+  editItem(item:Task, i:number, listId:string) {
+    this.updateItemIndex = i;
+    this.updateItemId = item.id;
+    this.updateItemList = listId;
+	this.taskService.get(item.id).subscribe(item => {
+		let taskItem: any = item["data"];
+		let taskData: Task = { id: taskItem.id, description: taskItem.description, list: 't', position: 0, done: false};
+		this.openPopup(0, 'Update todo item', TodoItemWindowComponent, taskData);
+	});
+  }
+
+  openPopup(code: any, title: any, component: any, item:Task) {
+    var _popup = this.dialog.open(component, {
+      width: '40%',
+      //enterAnimationDuration: '1000ms',
+      //exitAnimationDuration: '1000ms',
+      data: {
+        title: title,
+        taskItem: item
+      }
+    });
+    _popup.afterClosed().subscribe(item => {
+		this.getTasks();
+    })
   }
 
 }

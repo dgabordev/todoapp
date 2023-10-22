@@ -14,10 +14,15 @@ if(isset($postdata) && !empty($postdata)) {
   }
 
   // Sanitize.
+  $id = mysqli_real_escape_string($con, (int)$request->data->id);
   $description = mysqli_real_escape_string($con, trim($request->data->description));
 
   // Store.
-  $sql = "INSERT INTO `todolist`(`id`,`name`,`list`,`date_added`) VALUES (null,'{$description}', 't', NOW())";
+  if ($id > 0) {
+    $sql = "UPDATE `todolist` SET `name`='$description' WHERE `id` = '{$id}' LIMIT 1";
+  } else {
+    $sql = "INSERT INTO `todolist`(`id`,`name`,`list`,`date_added`) VALUES (null, '{$description}', 't', NOW())";
+  }
 
   if(mysqli_query($con,$sql)) {
     http_response_code(201);

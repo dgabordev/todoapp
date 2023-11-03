@@ -18,9 +18,12 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatListModule } from '@angular/material/list';
+import { MatSelectModule } from '@angular/material/select';
 
 import { TodoItemWindowComponent } from './components/todo-item-window/todo-item-window.component';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
+import { TodoFolderWindowComponent } from './components/todo-folder-window/todo-folder-window.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +31,8 @@ import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dial
     NavbarComponent,
     TodoComponent,
     TodoItemWindowComponent,
-    ConfirmDialogComponent
+    ConfirmDialogComponent,
+    TodoFolderWindowComponent
   ],
   imports: [
     BrowserModule,
@@ -45,6 +49,8 @@ import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dial
     HttpClientModule,
     MatDialogModule,
     MatSnackBarModule,
+    MatListModule,
+    MatSelectModule
 
   ],
   providers: [],

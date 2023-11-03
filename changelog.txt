@@ -19,3 +19,9 @@ Code
 - new component: ConfirmDialogComponent, it handles the confirmation dialog for eg.: 
     ask when delete todo item (are you sure to delete this todo item?)
 - confirmation dialog for delete todo item
+
+v3.0
+
+- new folder list on the left pane
+- new todo-folder-window component
+- the displayed lists depends on the selected folder on the left, at default all listed

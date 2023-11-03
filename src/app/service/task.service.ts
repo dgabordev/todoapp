@@ -27,6 +27,15 @@ export class TaskService {
       })
     );
   }
+
+  getAllByFolder(id: any) {
+    const params = new HttpParams().set('folder_id', id.toString());
+    return this.http.get(`${this.baseUrl}/list`, { params: params }).pipe(
+      map((res: any) => {
+        return res['data'];
+      })
+    );
+  }
  
   store(task: Task) {
     return this.http.post(`${this.baseUrl}/store`, { data: task }).pipe(

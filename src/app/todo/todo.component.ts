@@ -4,8 +4,12 @@ import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/dr
 import { Task } from '../model/task';
 import { TaskService } from '../service/task.service';
 import { TodoItemWindowComponent } from '../components/todo-item-window/todo-item-window.component';
+import { Folder } from '../model/folder';
+import { FolderService } from '../service/folder.service';
+import { TodoFolderWindowComponent } from '../components/todo-folder-window/todo-folder-window.component';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogModel, ConfirmDialogComponent } from '../components/confirm-dialog/confirm-dialog.component';
+import { MainService } from '../service/main.service';
 
 @Component({
   selector: 'app-todo',
@@ -20,62 +24,47 @@ export class TodoComponent implements OnInit {
   tasksList: Task[] = [];
   inprogressList: Task[] = [];
   doneList: Task[] = [];
-  
-  updateItemIndex!: any;
-  updateItemId!: any;
-  updateItemList: string = "";
+  foldersList: { id: number, name: string}[] = [];
+  currentFolder: 0;
 
-  isEditEnabled: boolean = false;
-
-	editData: any;
-
-  errorMessage = '';
-  successMessage = '';
-
-  constructor(private fb: FormBuilder, private taskService: TaskService, private dialog: MatDialog) { }
+  constructor(private fb: FormBuilder, private taskService: TaskService, private folderService: FolderService, 
+	private dialog: MatDialog, private mainService: MainService) { }
 
   ngOnInit(): void {
-    this.getTasks();
+    this.getFolders();
+    this.getTasks(0);
     this.todoForm = this.fb.group({
       item : ['', Validators.required]
     })
   }
 
-  onEdit(item:Task, i:number, listId:string) {
-    this.todoForm.controls['item'].setValue(item.description);
-    this.updateItemIndex = i;
-    this.updateItemId = item.id;
-    this.updateItemList = listId;
-    this.isEditEnabled = true;
-  }
-
   deleteTask(item:Task, i:number, listId:string) {
-	const message = `Are you sure you want to delete this item?`;
-	const dialogData = new ConfirmDialogModel("Confirm Action", message);
-	const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-		maxWidth: "400px",
-		data: dialogData
-	});
-  
-	dialogRef.afterClosed().subscribe(dialogResult => {
-		if (dialogResult) {
-			this.taskService.delete(item.id).subscribe(
-				(res) => {
-					if (listId=="t") {
-					this.tasksList.splice(i,1);
-					}
-					if (listId=="p") {
-					this.inprogressList.splice(i,1);
-					}
-					if (listId=="d") {
-					this.doneList.splice(i,1);
-					}
-					this.showSuccessMessage('Deleted successfully');
-				},
-				(err) => (this.showErrorMessage(err))
-			);
-		}
-	});
+    const message = `Are you sure you want to delete this item?`;
+    const dialogData = new ConfirmDialogModel("Confirm Action", message);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      maxWidth: "400px",
+      data: dialogData
+    });
+    
+    dialogRef.afterClosed().subscribe(dialogResult => {
+      if (dialogResult) {
+        this.taskService.delete(item.id).subscribe(
+          (res) => {
+            if (listId=="t") {
+            this.tasksList.splice(i,1);
+            }
+            if (listId=="p") {
+            this.inprogressList.splice(i,1);
+            }
+            if (listId=="d") {
+            this.doneList.splice(i,1);
+            }
+            //console.log('Deleted successfully');
+          },
+          (err) => ( this.mainService.openErrorStatusBar("Error: " + err) )
+        );
+      }
+    });
   }
 
   drop(event: CdkDragDrop<Task[]>) {
@@ -100,7 +89,7 @@ export class TodoComponent implements OnInit {
           });
           this.taskService.updateItemPositions(this.tasksList).subscribe(
             (res) => {},
-            (err) => (this.showErrorMessage(err))
+            (err) => ( this.mainService.openErrorStatusBar("Error: " + err) )
           );
         }
         if (event.container.id=="list-inprogress") {
@@ -111,7 +100,7 @@ export class TodoComponent implements OnInit {
           });
           this.taskService.updateItemPositions(this.inprogressList).subscribe(
             (res) => {},
-            (err) => (this.showErrorMessage(err))
+            (err) => ( this.mainService.openErrorStatusBar("Error: " + err) )
           );
         }
         if (event.container.id=="list-done") {
@@ -122,21 +111,21 @@ export class TodoComponent implements OnInit {
           });
           this.taskService.updateItemPositions(this.doneList).subscribe(
             (res) => {},
-            (err) => (this.showErrorMessage(err))
+            (err) => ( this.mainService.openErrorStatusBar("Error: " + err) )
           );
         }
-        this.showSuccessMessage('Updated successfully');
+        //console.log('Updated successfully');
       },
-      (err) => (this.showErrorMessage(err))
+      (err) => ( this.mainService.openErrorStatusBar("Error: " + err) )
     );
 
   }
 
-  getTasks(): void {
-	this.tasksList = [];
-	this.inprogressList = [];
-	this.doneList = [];
-    this.taskService.getAll().subscribe(
+  getTasks(id: any): void {
+    this.tasksList = [];
+    this.inprogressList = [];
+    this.doneList = [];
+    this.taskService.getAllByFolder(id).subscribe(
       (data: Task[]) => {
         data.forEach((taskItem) => {
           if (taskItem.list=='t') {
@@ -149,52 +138,80 @@ export class TodoComponent implements OnInit {
             this.doneList.push(taskItem);
           }
         });
-        this.showSuccessMessage('List loaded');
+        //console.log('List loaded');
       },
-      (err) => (this.showErrorMessage(err))
+      (err) => ( this.mainService.openErrorStatusBar("Error: " + err) )
     );
   }
 
-  showSuccessMessage(msg:string) {
-    this.successMessage = msg;
-    setTimeout(() => this.successMessage='', 3000);
-  }
-
-  showErrorMessage(msg:string) {
-    console.log(msg);
-    this.errorMessage = msg;
-    setTimeout(() => this.errorMessage='', 5000);
-  }
-
   addItem() {
-    let newTask: Task = { id: null, description: "", list: 't', position: 0, done: false};
-    this.openPopup(0, 'Add new todo item', TodoItemWindowComponent, newTask);
+    let newTask: Task = { id: null, folder_id: 0, description: "", list: 't', position: 0, done: false };
+    this.openItemPopup(0, 'Add new todo item', TodoItemWindowComponent, newTask);
   }
 
   editItem(item:Task, i:number, listId:string) {
-    this.updateItemIndex = i;
-    this.updateItemId = item.id;
-    this.updateItemList = listId;
-	this.taskService.get(item.id).subscribe(item => {
-		let taskItem: any = item["data"];
-		let taskData: Task = { id: taskItem.id, description: taskItem.description, list: 't', position: 0, done: false};
-		this.openPopup(0, 'Update todo item', TodoItemWindowComponent, taskData);
-	});
+    this.taskService.get(item.id).subscribe(item => {
+      let taskItem: any = item["data"];
+      let taskData: Task = { id: taskItem.id, folder_id: taskItem.folder_id, description: taskItem.description, list: 't', position: 0, done: false };
+      this.openItemPopup(0, 'Update todo item', TodoItemWindowComponent, taskData);
+    });
   }
 
-  openPopup(code: any, title: any, component: any, item:Task) {
+  openItemPopup(code: any, title: any, component: any, item:Task) {
     var _popup = this.dialog.open(component, {
       width: '40%',
-      //enterAnimationDuration: '1000ms',
-      //exitAnimationDuration: '1000ms',
       data: {
         title: title,
         taskItem: item
       }
     });
     _popup.afterClosed().subscribe(item => {
-		this.getTasks();
+		this.getTasks(this.currentFolder);
     })
+  }
+
+  addFolder() {
+    let newFolder: Folder = { id: null, name: "" };
+    this.openFolderPopup(0, 'Add new todo folder', TodoFolderWindowComponent, newFolder);
+  }
+
+  editFolder(folderId:any) {
+    this.folderService.get(folderId).subscribe(item => {
+      let folderItem: any = item["data"];
+      let folderData: Folder = { id: folderItem.id, name: folderItem.name };
+      this.openFolderPopup(0, 'Update todo folder', TodoFolderWindowComponent, folderData);
+    });
+  }
+
+  openFolderPopup(code: any, title: any, component: any, folder:Folder) {
+    var _popup = this.dialog.open(component, {
+      width: '40%',
+      data: {
+        title: title,
+        taskFolder: folder
+      }
+    });
+    _popup.afterClosed().subscribe(item => {
+		this.getFolders();
+    })
+  }
+
+  getFolders(): void {
+  	this.foldersList = [];
+    this.folderService.getAll().subscribe(
+      (data: Folder[]) => {
+        data.forEach((folderItem) => {
+            this.foldersList.push(folderItem);
+        });
+        //console.log('Folders list loaded');
+      },
+      (err) => ( this.mainService.openErrorStatusBar("Error: " + err) )
+    );
+  }
+
+  showFolderItems(id: any) {
+    this.currentFolder = id;
+    this.getTasks(this.currentFolder);
   }
 
 }

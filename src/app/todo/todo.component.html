@@ -1,11 +1,25 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-3 side-left">
-            <div>
-                <div style="text-align: center; padding-top: 20px;">
-                    <button (click)="addItem()" mat-raised-button color="primary">Add Item (+)</button>
-                </div>
+            <div class="item-add-div">
+                <button (click)="addItem()" mat-raised-button color="primary">Add Item (+)</button>
             </div>
+            <div class="folder-add-div">
+                <button (click)="addFolder()" mat-icon-button class="folder-add-button">
+                    Add folder <mat-icon class="mat-24">add</mat-icon>
+                </button>
+            </div>
+
+            <mat-action-list>
+                <button mat-list-item (click)="showFolderItems(0)" class="folder-list-item" style="padding:0">All</button>
+                <mat-list-item *ngFor="let folder of foldersList">
+                    <button mat-list-item (click)="showFolderItems(folder.id)" class="folder-list-item">{{folder.name}} </button>
+                    <button matListItemMeta mat-icon-button (click)="editFolder(folder.id)">
+                      <mat-icon class="mat-24">edit</mat-icon>
+                    </button>
+                </mat-list-item>
+            </mat-action-list>
+
         </div>
         <div class="col-md-9 mt-3">
             <div cdkDropListGroup>

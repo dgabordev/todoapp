@@ -16,12 +16,13 @@ if(isset($postdata) && !empty($postdata)) {
   // Sanitize.
   $id = mysqli_real_escape_string($con, (int)$request->data->id);
   $description = mysqli_real_escape_string($con, trim($request->data->description));
+  $folder_id = mysqli_real_escape_string($con, (int)$request->data->folder_id);
 
   // Store.
   if ($id > 0) {
-    $sql = "UPDATE `todolist` SET `name`='$description' WHERE `id` = '{$id}' LIMIT 1";
+    $sql = "UPDATE `todolist` SET `name`='$description', `folder_id`='$folder_id' WHERE `id` = '{$id}' LIMIT 1";
   } else {
-    $sql = "INSERT INTO `todolist`(`id`,`name`,`list`,`date_added`) VALUES (null, '{$description}', 't', NOW())";
+    $sql = "INSERT INTO `todolist`(`id`,`folder_id`,`name`,`list`,`date_added`) VALUES (null, '{$folder_id}', '{$description}', 't', NOW())";
   }
 
   if(mysqli_query($con,$sql)) {
